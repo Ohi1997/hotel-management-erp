@@ -2,58 +2,83 @@
 
 namespace App\Livewire\Backoffice\Customers;
 
-use Livewire\Component;
 use App\Models\Customer;
-use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rule as ValidationRule;
+use Livewire\Component;
 
 class Form extends Component
 {
-    public $customer_id;
-    public $name;
-    public $email;
-    public $phone;
-    public $gov_id;
-    public $address;
-    public $notes;
+    use AuthorizesRequests;
 
-    protected $rules = [
-        'name' => 'required|string|max:255',
-        'email' => 'nullable|email|max:255',
-        'phone' => 'nullable|string|max:20',
-        'gov_id' => 'nullable|string|max:50',
-        'address' => 'nullable|string|max:255',
-        'notes' => 'nullable|string|max:500',
-    ];
+    public ?Customer $customer = null;
 
-    public function mount($id = null)
+    public string $name = '';
+    public ?string $email = null;
+    public ?string $phone = null;
+    public ?string $gov_id = null;
+    public ?string $address = null;
+    public ?string $notes = null;
+
+    public function mount(?int $customerId = null): void
     {
-        if ($id) {
-            $customer = Customer::findOrFail($id);
-            $this->fill($customer->toArray());
-            $this->customer_id = $id;
+        if ($customerId) {
+            $customer = Customer::findOrFail($customerId);
+            $this->authorize('update', $customer);
+            $this->loadCustomer($customer);
+        } else {
+            $this->authorize('create', Customer::class);
         }
     }
 
-    public function save()
+    protected function loadCustomer(?Customer $customer): void
     {
-        $this->validate();
+        $this->customer = $customer;
 
-        Customer::updateOrCreate(
-            ['id' => $this->customer_id],
-            [
-                'name' => $this->name,
-                'email' => $this->email,
-                'phone' => $this->phone,
-                'gov_id' => $this->gov_id,
-                'address' => $this->address,
-                'notes' => $this->notes,
-            ]
-        );
+        if ($customer) {
+            $this->fill($customer->only([
+                'name',
+                'email',
+                'phone',
+                'gov_id',
+                'address',
+                'notes',
+            ]));
+        } else {
+            $this->reset(['name', 'email', 'phone', 'gov_id', 'address', 'notes']);
+        }
+    }
 
-        session()->flash('success', $this->customer_id ? 'Customer updated!' : 'Customer added!');
-        $this->dispatch('customer-saved'); // tells parent list to refresh
-        $this->reset();                    // clears the form
+    public function rules(): array
+    {
+        $ignoreId = $this->customer?->id;
 
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', ValidationRule::unique('customers', 'email')->ignore($ignoreId)],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'gov_id' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ];
+    }
+
+    public function save(): void
+    {
+        $data = $this->validate();
+
+        if ($this->customer) {
+            $this->authorize('update', $this->customer);
+            $this->customer->update($data);
+            $customer = $this->customer->refresh();
+        } else {
+            $this->authorize('create', Customer::class);
+            $customer = Customer::create($data);
+        }
+
+        $this->loadCustomer($customer);
+
+        $this->dispatch('customer-saved', id: $customer->id);
         $this->dispatch('close-modal');
     }
 

@@ -1,61 +1,77 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Hotel Management ERP Backoffice
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 12 + Livewire 3 implementation of a hotel backoffice. This project provides a modern admin for managing customers, bookings, room inventory, wake-up calls, and payments with role-based access powered by **spatie/laravel-permission**.
 
-## About Laravel
+## Tech stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3+
+- Laravel 12 (Breeze / Blade)
+- Livewire 3 + Alpine.js
+- Tailwind CSS
+- MySQL 8
+- Spatie Laravel Permission
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Getting started
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+cp .env.example .env
+composer install
+npm install
+php artisan key:generate
+php artisan migrate --seed
+npm run build   # or `npm run dev` while developing
+```
 
-## Learning Laravel
+### Default credentials
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Role    | Email                 | Password |
+|---------|-----------------------|----------|
+| Admin   | `admin@example.com`   | `password` |
+| Manager | `manager@example.com` | `password` |
+| Cashier | `cashier@example.com` | `password` |
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+These accounts are created by `RolesAndUsersSeeder`. Running `php artisan migrate --seed` will populate demo rooms, customers, bookings, payments, and wake-up calls for exploration.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Backoffice modules
 
-## Laravel Sponsors
+| Module      | Features | Permissions |
+|-------------|----------|-------------|
+| Customers   | Search, create/edit via Livewire modals, detail drawer with stay history. | admin, manager (manage), cashier (view) |
+| Bookings    | Reservation list with filters, modal-based CRUD, check-in/out workflows, balance tracking. | admin, manager |
+| Payments    | Payment ledger and capture modal that updates booking balances in real time. | admin, cashier |
+| Rooms       | Status board (availability & housekeeping), room type editor, floor manager. | admin, manager (board), admin (setup) |
+| Wake-ups    | Schedule/manage wake-up calls with status automation. | admin, manager, cashier |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Each Livewire component supports Alpine powered modals (`x-show`/`x-cloak`) with unique `wire:key` values to ensure correct hydration when inserted dynamically. Livewire events (`dispatch('customer-saved')`, etc.) are used to refresh lists, emit toasts, and close modals without page reloads.
 
-### Premium Partners
+## Architecture notes
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- **Policies:** Access control is enforced by policies registered in `AppServiceProvider`. Spatie roles gate each module.
+- **Observers:** An `AuditableObserver` logs create/update/delete events to the `audit_logs` table for the primary entities.
+- **Events:** `BookingConfirmed` and `PaymentRecorded` domain events are dispatched on status transitions and new payments.
+- **Factories & seeders:** Comprehensive factories plus `BackofficeSampleSeeder` provide demo data for local development.
+- **UI layout:** `resources/views/layouts/backoffice.blade.php` delivers a sidebar layout, toast notifications (Livewire + Alpine), and shared asset includes.
 
-## Contributing
+## Testing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Run the full PHPUnit test suite:
 
-## Code of Conduct
+```bash
+php artisan test
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Ensure database migrations are up to date before executing tests.
 
-## Security Vulnerabilities
+> **Note:** GitHub rate limiting may cause `composer install` to request an OAuth
+> token when fetching Livewire/Pest packages. Generate a temporary token at
+> https://github.com/settings/tokens/new if installation fails with a 403.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Module overview
 
-## License
+- **Customers:** `App\Livewire\Backoffice\Customers\*` + `resources/views/livewire/backoffice/customers`.
+- **Bookings:** `App\Livewire\Backoffice\Bookings\*` + `resources/views/livewire/backoffice/bookings`.
+- **Payments:** `App\Livewire\Backoffice\Payments\*` + `resources/views/livewire/backoffice/payments`.
+- **Rooms:** `App\Livewire\Backoffice\Rooms\*` + `resources/views/livewire/backoffice/rooms`.
+- **Wake-ups:** `App\Livewire\Backoffice\WakeUps\*` + `resources/views/livewire/backoffice/wake-ups`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Refer to `routes/backoffice.php` for the full route map grouped under the `/backoffice` prefix.
