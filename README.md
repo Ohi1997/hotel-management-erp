@@ -1,61 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+﻿# Hotel Management ERP Backoffice
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel 12 + Livewire 3 powered backoffice for managing customers, bookings, payments, rooms, and wake-up requests for the hotel-management-erp stack. The system uses Breeze (Blade), Alpine.js, Tailwind CSS, and spatie/laravel-permission for role-aware navigation and authorization.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3+, Laravel 12, MySQL 8
+- Livewire 3 + Alpine.js, Tailwind CSS
+- Breeze (Blade stack)
+- spatie/laravel-permission
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Local Setup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Install dependencies**
+   ```bash
+   composer install
+   npm install
+   ```
 
-## Learning Laravel
+2. **Environment**
+   - Copy `.env.example` to `.env` and update database/mail credentials.
+   - Ensure `DB_CONNECTION=mysql` and create the application database (e.g. `hotel-management`).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+3. **Database**
+   ```bash
+   php artisan migrate --seed
+   ```
+   This seeds core roles (`admin`, `manager`, `cashier`), demo users, and sample operational data for rooms, bookings, payments, and wake-up calls.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+4. **Test database**
+   - Create a dedicated testing database (defaults to `hotel_management_test`).
+   - No SQLite driver is required; tests run against MySQL using the credentials defined in `phpunit.xml`.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+5. **Run the backoffice**
+   ```bash
+   php artisan serve
+   npm run dev
+   ```
+   Login with any seeded user (e.g. `admin@example.com` / `password`).
 
-## Laravel Sponsors
+6. **Execute the test suite**
+   ```bash
+   php artisan test
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Module Overview
 
-### Premium Partners
+| Module | Livewire Components | Highlights |
+| --- | --- | --- |
+| Customers | `Backoffice\Customers\Index`, `Form`, `Show` | Modal-based CRUD with Alpine-powered, keyed Livewire forms, customer metrics, and detail drawer. |
+| Bookings | `Backoffice\Bookings\Index`, `Form`, `CheckIn`, `CheckOut` | Reservation workflow, status transitions updating room availability, eager-loaded room/customer data, dispatches `BookingConfirmed`. |
+| Payments | `Backoffice\Payments\Index`, `AddPayment` | Records payments per booking/customer, auto-assigns current user (`recorded_by`), dispatches `PaymentRecorded`. |
+| Rooms | `Backoffice\Rooms\StatusBoard`, `RoomType`, `Floor` | Status dashboard with filters, room type & floor management, audit logging on every mutation. |
+| Wake-Ups | `Backoffice\WakeUps\Index`, `Form` | Schedule and track reminders per booking with status lifecycle. |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Architecture Notes
 
-## Contributing
+- **Observers & Audit Trail**: `AuditableObserver` records create/update/delete events to the `audit_logs` table for customers, bookings, payments, rooms, and wake-up calls.
+- **Events**: `BookingConfirmed` and `PaymentRecorded` fire dedicated listeners for logging and future integrations.
+- **Authorization**: Policies cover all operational models; routes are grouped under `backoffice` with `auth`, `verified`, and role middleware.
+- **UI Layout**: `layouts/backoffice.blade.php` hosts the shared navigation, role-aware sidebar, Alpine toast notifications (`$dispatch('toast', ...)`), and Livewire assets.
+- **Factories & Seeders**: Comprehensive factories (`Floor`, `RoomType`, `Room`, `Booking`, `Payment`, `WakeUp`, `Customer`) plus `DatabaseSeeder` populates realistic demo data.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Testing & QA
 
-## Code of Conduct
+- Feature coverage uses Livewire component tests in `tests/Feature/Backoffice/LivewireCrudTest.php` to assert end-to-end CRUD flows.
+- Breeze feature tests remain enabled and run against MySQL.
+- Run `php artisan test` after modifying migrations or Livewire components to validate database interactions and modal behaviour.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Housekeeping
 
-## Security Vulnerabilities
+- Named routes live in `routes/backoffice.php` and are automatically prefixed with `backoffice.` by `RouteServiceProvider`.
+- Role-aware navigation links live in `resources/views/components/backoffice/nav-link.blade.php`.
+- Toast helper listens for `toast` browser events globally to keep components decoupled.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Happy shipping! 🚢

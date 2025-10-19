@@ -2,63 +2,96 @@
 
 namespace App\Livewire\Backoffice\Customers;
 
-use Livewire\Component;
 use App\Models\Customer;
-use Illuminate\Validation\Rule;
+use Livewire\Component;
 
 class Form extends Component
 {
-    public $customer_id;
-    public $name;
-    public $email;
-    public $phone;
-    public $gov_id;
-    public $address;
-    public $notes;
+    public ?int $customerId = null;
 
-    protected $rules = [
-        'name' => 'required|string|max:255',
-        'email' => 'nullable|email|max:255',
-        'phone' => 'nullable|string|max:20',
-        'gov_id' => 'nullable|string|max:50',
-        'address' => 'nullable|string|max:255',
-        'notes' => 'nullable|string|max:500',
-    ];
+    /**
+     * The backing form state.
+     *
+     * @var array<string, mixed>
+     */
+    public array $form = [];
 
-    public function mount($id = null)
+    public function mount(?int $customerId = null): void
     {
-        if ($id) {
-            $customer = Customer::findOrFail($id);
-            $this->fill($customer->toArray());
-            $this->customer_id = $id;
-        }
+        $this->form = $this->defaults();
+        $this->loadCustomer($customerId);
     }
 
-    public function save()
+    public function updatedCustomerId(?int $customerId): void
     {
-        $this->validate();
+        $this->loadCustomer($customerId);
+    }
 
-        Customer::updateOrCreate(
-            ['id' => $this->customer_id],
-            [
-                'name' => $this->name,
-                'email' => $this->email,
-                'phone' => $this->phone,
-                'gov_id' => $this->gov_id,
-                'address' => $this->address,
-                'notes' => $this->notes,
-            ]
+    public function save(): void
+    {
+        $validated = $this->validate();
+        $payload = $validated['form'];
+        $isUpdating = (bool) $this->customerId;
+
+        $customer = Customer::updateOrCreate(
+            ['id' => $this->customerId],
+            $payload
         );
 
-        session()->flash('success', $this->customer_id ? 'Customer updated!' : 'Customer added!');
-        $this->dispatch('customer-saved'); // tells parent list to refresh
-        $this->reset();                    // clears the form
+        $message = $isUpdating ? 'Customer updated successfully.' : 'Customer created successfully.';
 
-        $this->dispatch('close-modal');
+        $this->dispatch('customer-saved', id: $customer->id);
+        $this->dispatch('modal-close', id: 'customer-form');
+        $this->dispatch('toast', type: 'success', message: $message);
+
+        $this->resetForm();
     }
 
     public function render()
     {
         return view('livewire.backoffice.customers.form');
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'form.name' => ['required', 'string', 'max:255'],
+            'form.email' => ['nullable', 'email', 'max:255'],
+            'form.phone' => ['nullable', 'string', 'max:20'],
+            'form.gov_id' => ['nullable', 'string', 'max:50'],
+            'form.address' => ['nullable', 'string', 'max:255'],
+            'form.notes' => ['nullable', 'string', 'max:500'],
+        ];
+    }
+
+    protected function loadCustomer(?int $customerId): void
+    {
+        $this->customerId = $customerId;
+        $this->resetValidation();
+        $this->form = $this->defaults();
+
+        if ($customerId) {
+            $customer = Customer::findOrFail($customerId);
+            $this->form = array_merge($this->form, $customer->only(array_keys($this->form)));
+        }
+    }
+
+    protected function defaults(): array
+    {
+        return [
+            'name' => '',
+            'email' => '',
+            'phone' => '',
+            'gov_id' => '',
+            'address' => '',
+            'notes' => '',
+        ];
+    }
+
+    protected function resetForm(): void
+    {
+        $this->customerId = null;
+        $this->form = $this->defaults();
+        $this->resetValidation();
     }
 }

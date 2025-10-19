@@ -1,0 +1,34 @@
+@props([
+    'href' => '#',
+    'icon' => null,
+    'active' => false,
+])
+
+@php
+    $baseClasses = 'flex items-center gap-3 rounded-md px-3 py-2 font-medium transition';
+    $states = $active
+        ? 'bg-blue-50 text-blue-700'
+        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800';
+
+    $icons = [
+        'home' => 'M2.25 12l9.75-9.75 9.75 9.75v9a.75.75 0 01-.75.75h-6.75v-6h-6v6H3a.75.75 0 01-.75-.75v-9z',
+        'users' => 'M17.982 13.324a4.5 4.5 0 10-5.964 0 7.5 7.5 0 00-4.514 6.354.75.75 0 001.5.044 6 6 0 0111.992 0 .75.75 0 101.5-.044 7.5 7.5 0 00-4.514-6.354zM12 15a3 3 0 10-3-3 3 3 0 003 3z',
+        'calendar' => 'M6.75 3A.75.75 0 017.5 2.25h1.5a.75.75 0 010 1.5H9v1.5h6V3.75h-.75a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75V6h.75A1.5 1.5 0 0118 7.5v9A1.5 1.5 0 0116.5 18h-9A1.5 1.5 0 016 16.5v-9A1.5 1.5 0 017.5 6H8V3.75h-.75zM6 8.25v8.25h9V8.25z',
+        'credit-card' => 'M3 6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75v1.5H3zm0 3h18v6A2.25 2.25 0 0118.75 18h-13.5A2.25 2.25 0 013 15.75zM6 14.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5z',
+        'bell' => 'M14.25 18a2.25 2.25 0 11-4.5 0h4.5zM18 13.5V10a6 6 0 10-12 0v3.5l-.97 1.94A.75.75 0 005.687 16h12.626a.75.75 0 00.657-1.06z',
+        'building' => 'M3 21.75a.75.75 0 01-.75-.75V6A2.25 2.25 0 014.5 3.75h6.75V2.25a.75.75 0 011.5 0v1.5H19.5A2.25 2.25 0 0121.75 6v15a.75.75 0 01-.75.75zM4.5 6a.75.75 0 00-.75.75v13.5h3v-6.75h10.5v6.75h3V6.75a.75.75 0 00-.75-.75z',
+        'layers' => 'M11.47 2.22a.75.75 0 011.06 0l7.5 7.5a.75.75 0 01-.53 1.28h-15a.75.75 0 01-.53-1.28zM3.22 11.47a.75.75 0 011.06 0l7.22 7.22 7.22-7.22a.75.75 0 111.06 1.06l-7.75 7.75a.75.75 0 01-1.06 0l-7.75-7.75a.75.75 0 010-1.06z',
+        'map' => 'M2.25 5.25a.75.75 0 011.02-.704l6.73 2.437 6-2.4a.75.75 0 011.02.703v11.7a.75.75 0 01-.51.712l-6.75 2.4a.75.75 0 01-.5 0l-6.75-2.4a.75.75 0 01-.52-.712z',
+    ];
+
+    $iconPath = $icon && isset($icons[$icon]) ? $icons[$icon] : null;
+@endphp
+
+<a {{ $attributes->merge(['href' => $href, 'class' => "$baseClasses $states"]) }}>
+    @if($iconPath)
+        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconPath }}" />
+        </svg>
+    @endif
+    <span>{{ $slot }}</span>
+</a>
