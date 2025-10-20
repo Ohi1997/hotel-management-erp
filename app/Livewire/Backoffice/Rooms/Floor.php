@@ -84,18 +84,20 @@ class Floor extends Component
     public function updatedSelected(): void
     {
         $currentIds = $this->currentPageIds();
-        $selectedIds = array_map('intval', $this->selected);
+        $selectedIds = $this->selectedIds();
 
         $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
     }
 
     public function deleteSelected(): void
     {
-        if (! $this->selected) {
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
             return;
         }
 
-        FloorModel::whereIn('id', $this->selected)->delete();
+        FloorModel::whereIn('id', $ids)->delete();
 
         $this->dispatch('toast', type: 'deleted', message: 'Selected floors removed.');
 
@@ -163,6 +165,11 @@ class Floor extends Component
     protected function currentPageIds(): array
     {
         return $this->floors->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    protected function selectedIds(): array
+    {
+        return array_map('intval', $this->selected);
     }
 }
 

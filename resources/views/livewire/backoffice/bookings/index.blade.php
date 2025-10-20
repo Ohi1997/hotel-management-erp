@@ -74,7 +74,7 @@
                         <th class="px-4 py-3">
                             <input
                                 type="checkbox"
-                                wire:model="selectPage"
+                                wire:model.live="selectPage"
                                 class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             >
                         </th>
@@ -94,7 +94,7 @@
                                 <input
                                     type="checkbox"
                                     value="{{ $booking->id }}"
-                                    wire:model="selected"
+                                    wire:model.live="selected"
                                     class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 >
                             </td>

@@ -113,18 +113,20 @@ class Index extends Component
     public function updatedSelected(): void
     {
         $currentIds = $this->currentPageIds();
-        $selectedIds = array_map('intval', $this->selected);
+        $selectedIds = $this->selectedIds();
 
         $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
     }
 
     public function deleteSelected(): void
     {
-        if (! $this->selected) {
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
             return;
         }
 
-        $bookings = Booking::with('room')->whereIn('id', $this->selected)->get();
+        $bookings = Booking::with('room')->whereIn('id', $ids)->get();
 
         foreach ($bookings as $booking) {
             $booking->delete();
@@ -184,6 +186,11 @@ class Index extends Component
     protected function currentPageIds(): array
     {
         return $this->bookings->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    protected function selectedIds(): array
+    {
+        return array_map('intval', $this->selected);
     }
 }
 
