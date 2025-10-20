@@ -16,10 +16,13 @@ class Index extends Component
     public ?int $editingCustomerId = null;
     public ?int $detailCustomerId = null;
     public int $formInstance = 0;
+    public bool $selectPage = false;
+    public array $selected = [];
 
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     #[On('customer-saved')]
@@ -27,6 +30,7 @@ class Index extends Component
     {
         $this->editingCustomerId = null;
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function openCreate(): void
@@ -60,7 +64,40 @@ class Index extends Component
         Customer::findOrFail($customerId)->delete();
 
         $this->resetPage();
+        $this->removeFromSelection($customerId);
         $this->dispatch('toast', type: 'deleted', message: 'Customer deleted successfully.');
+    }
+
+    public function updatedSelectPage(bool $value): void
+    {
+        if ($value) {
+            $this->selected = $this->currentPageIds();
+            return;
+        }
+
+        $this->selected = [];
+    }
+
+    public function updatedSelected(): void
+    {
+        $currentIds = $this->currentPageIds();
+        $selectedIds = array_map('intval', $this->selected);
+
+        $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
+    }
+
+    public function deleteSelected(): void
+    {
+        if (! $this->selected) {
+            return;
+        }
+
+        Customer::whereIn('id', $this->selected)->delete();
+
+        $this->dispatch('toast', type: 'deleted', message: 'Selected customers deleted successfully.');
+
+        $this->resetSelection();
+        $this->resetPage();
     }
 
     #[Computed]
@@ -85,6 +122,26 @@ class Index extends Component
             'customers' => $this->customers,
         ])
             ->layout('layouts.backoffice', ['pageTitle' => 'Customers']);
+    }
+
+    protected function resetSelection(): void
+    {
+        $this->selectPage = false;
+        $this->selected = [];
+    }
+
+    protected function removeFromSelection(int $id): void
+    {
+        $this->selected = array_values(array_filter($this->selected, fn ($selectedId) => (int) $selectedId !== $id));
+
+        if (! $this->selected) {
+            $this->selectPage = false;
+        }
+    }
+
+    protected function currentPageIds(): array
+    {
+        return $this->customers->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 }
 

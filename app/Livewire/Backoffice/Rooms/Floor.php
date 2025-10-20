@@ -15,6 +15,8 @@ class Floor extends Component
     public ?int $editingId = null;
     public array $form = [];
     public int $formInstance = 0;
+    public bool $selectPage = false;
+    public array $selected = [];
 
     public function mount(): void
     {
@@ -24,6 +26,7 @@ class Floor extends Component
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function create(): void
@@ -57,13 +60,47 @@ class Floor extends Component
 
         $this->resetForm();
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function delete(int $id): void
     {
         FloorModel::findOrFail($id)->delete();
         $this->resetPage();
+        $this->removeFromSelection($id);
         $this->dispatch('toast', type: 'deleted', message: 'Floor removed.');
+    }
+
+    public function updatedSelectPage(bool $value): void
+    {
+        if ($value) {
+            $this->selected = $this->currentPageIds();
+            return;
+        }
+
+        $this->selected = [];
+    }
+
+    public function updatedSelected(): void
+    {
+        $currentIds = $this->currentPageIds();
+        $selectedIds = array_map('intval', $this->selected);
+
+        $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
+    }
+
+    public function deleteSelected(): void
+    {
+        if (! $this->selected) {
+            return;
+        }
+
+        FloorModel::whereIn('id', $this->selected)->delete();
+
+        $this->dispatch('toast', type: 'deleted', message: 'Selected floors removed.');
+
+        $this->resetSelection();
+        $this->resetPage();
     }
 
     public function render()
@@ -106,6 +143,26 @@ class Floor extends Component
         $this->editingId = null;
         $this->form = $this->defaults();
         $this->resetValidation();
+    }
+
+    protected function resetSelection(): void
+    {
+        $this->selectPage = false;
+        $this->selected = [];
+    }
+
+    protected function removeFromSelection(int $id): void
+    {
+        $this->selected = array_values(array_filter($this->selected, fn ($selectedId) => (int) $selectedId !== $id));
+
+        if (! $this->selected) {
+            $this->selectPage = false;
+        }
+    }
+
+    protected function currentPageIds(): array
+    {
+        return $this->floors->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 }
 

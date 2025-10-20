@@ -47,12 +47,33 @@
                     <option value="cancelled">Cancelled</option>
                 </select>
             </div>
+
+            @if ($selected)
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-gray-600">{{ count($selected) }} selected</span>
+                    <button
+                        type="button"
+                        class="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
+                        wire:click="deleteSelected"
+                        wire:loading.attr="disabled"
+                    >
+                        Delete Selected
+                    </button>
+                </div>
+            @endif
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3">
+                            <input
+                                type="checkbox"
+                                wire:model="selectPage"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            >
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Reference</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Guest</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Room</th>
@@ -65,6 +86,14 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($bookings as $booking)
                         <tr wire:key="booking-row-{{ $booking->id }}">
+                            <td class="px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $booking->id }}"
+                                    wire:model="selected"
+                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
                             <td class="px-4 py-3 text-sm font-semibold text-gray-900">
                                 {{ $booking->reference }}
                             </td>
@@ -100,7 +129,7 @@
                                 ${{ number_format($booking->total_amount, 2) }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <div class="flex justify-end gap-2 text-sm">
+                                <div class="flex flex-wrap justify-end gap-2 text-sm">
                                     <button
                                         type="button"
                                         class="text-gray-600 hover:text-gray-900"
@@ -126,6 +155,14 @@
                                             Check Out
                                         </button>
                                     @endif
+
+                                    <button
+                                        type="button"
+                                        class="text-red-600 hover:text-red-700"
+                                        x-on:click.prevent="confirm('Delete this booking?') && $wire.delete({{ $booking->id }})"
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>
