@@ -1,5 +1,8 @@
 <?php
 
+use App\Livewire\Backoffice\Admin\Roles\Matrix as RolesMatrix;
+use App\Livewire\Backoffice\Admin\Settings\Manager as SettingsManager;
+use App\Livewire\Backoffice\Admin\Users\Index as AdminUsersIndex;
 use App\Livewire\Backoffice\Bookings\Index as BookingsIndex;
 use App\Livewire\Backoffice\Customers\Index as CustomersIndex;
 use App\Livewire\Backoffice\Payments\Index as PaymentsIndex;
@@ -32,4 +35,13 @@ Route::prefix('rooms')
         Route::get('/', RoomsStatusBoard::class)->name('board');
         Route::get('/types', RoomTypesManager::class)->name('types');
         Route::get('/floors', FloorsManager::class)->name('floors');
+    });
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'verified', 'role:admin'])
+    ->group(function () {
+        Route::get('/users', AdminUsersIndex::class)->name('users');
+        Route::get('/roles', RolesMatrix::class)->name('roles');
+        Route::get('/settings', SettingsManager::class)->name('settings');
     });

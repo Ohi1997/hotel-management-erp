@@ -102,6 +102,36 @@
                         </x-backoffice.nav-link>
                     </div>
                 @endrole
+
+                @role('admin')
+                    <div class="space-y-1">
+                        <p class="px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Administration</p>
+
+                        <x-backoffice.nav-link
+                            icon="users"
+                            :href="route('backoffice.admin.users')"
+                            :active="request()->routeIs('backoffice.admin.users')"
+                        >
+                            Users
+                        </x-backoffice.nav-link>
+
+                        <x-backoffice.nav-link
+                            icon="key"
+                            :href="route('backoffice.admin.roles')"
+                            :active="request()->routeIs('backoffice.admin.roles')"
+                        >
+                            Roles &amp; Permissions
+                        </x-backoffice.nav-link>
+
+                        <x-backoffice.nav-link
+                            icon="shield"
+                            :href="route('backoffice.admin.settings')"
+                            :active="request()->routeIs('backoffice.admin.settings')"
+                        >
+                            System Settings
+                        </x-backoffice.nav-link>
+                    </div>
+                @endrole
             </nav>
         </aside>
 
