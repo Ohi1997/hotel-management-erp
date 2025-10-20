@@ -18,6 +18,8 @@ class Index extends Component
     public ?int $customerId = null;
     public ?int $editingPaymentId = null;
     public int $formInstance = 0;
+    public bool $selectPage = false;
+    public array $selected = [];
 
     protected $queryString = [
         'status' => ['except' => null],
@@ -28,21 +30,25 @@ class Index extends Component
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function updatingStatus(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function updatingBookingId(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function updatingCustomerId(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     #[On('payment-saved')]
@@ -50,6 +56,7 @@ class Index extends Component
     {
         $this->editingPaymentId = null;
         $this->resetPage();
+        $this->resetSelection();
     }
 
     public function openCreate(): void
@@ -70,7 +77,40 @@ class Index extends Component
     {
         Payment::findOrFail($paymentId)->delete();
         $this->resetPage();
+        $this->removeFromSelection($paymentId);
         $this->dispatch('toast', type: 'deleted', message: 'Payment deleted.');
+    }
+
+    public function updatedSelectPage(bool $value): void
+    {
+        if ($value) {
+            $this->selected = $this->currentPageIds();
+            return;
+        }
+
+        $this->selected = [];
+    }
+
+    public function updatedSelected(): void
+    {
+        $currentIds = $this->currentPageIds();
+        $selectedIds = array_map('intval', $this->selected);
+
+        $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
+    }
+
+    public function deleteSelected(): void
+    {
+        if (! $this->selected) {
+            return;
+        }
+
+        Payment::whereIn('id', $this->selected)->delete();
+
+        $this->dispatch('toast', type: 'deleted', message: 'Selected payments deleted.');
+
+        $this->resetSelection();
+        $this->resetPage();
     }
 
     public function render()
@@ -102,6 +142,26 @@ class Index extends Component
             })
             ->latest()
             ->paginate(10);
+    }
+
+    protected function resetSelection(): void
+    {
+        $this->selectPage = false;
+        $this->selected = [];
+    }
+
+    protected function removeFromSelection(int $id): void
+    {
+        $this->selected = array_values(array_filter($this->selected, fn ($selectedId) => (int) $selectedId !== $id));
+
+        if (! $this->selected) {
+            $this->selectPage = false;
+        }
+    }
+
+    protected function currentPageIds(): array
+    {
+        return $this->payments->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 }
 

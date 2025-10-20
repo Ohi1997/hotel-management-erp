@@ -16,6 +16,8 @@ class RoomType extends Component
     public ?int $editingId = null;
     public array $form = [];
     public int $formInstance = 0;
+    public bool $selectPage = false;
+    public array $selected = [];
 
     public function mount(): void
     {
@@ -25,6 +27,7 @@ class RoomType extends Component
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->resetSelection();
     }
 
     #[On('room-type-saved')]
@@ -32,6 +35,7 @@ class RoomType extends Component
     {
         $this->resetPage();
         $this->editingId = null;
+        $this->resetSelection();
     }
 
     public function create(): void
@@ -71,7 +75,40 @@ class RoomType extends Component
     {
         RoomTypeModel::findOrFail($id)->delete();
         $this->resetPage();
+        $this->removeFromSelection($id);
         $this->dispatch('toast', type: 'deleted', message: 'Room type deleted.');
+    }
+
+    public function updatedSelectPage(bool $value): void
+    {
+        if ($value) {
+            $this->selected = $this->currentPageIds();
+            return;
+        }
+
+        $this->selected = [];
+    }
+
+    public function updatedSelected(): void
+    {
+        $currentIds = $this->currentPageIds();
+        $selectedIds = array_map('intval', $this->selected);
+
+        $this->selectPage = $currentIds !== [] && empty(array_diff($currentIds, $selectedIds));
+    }
+
+    public function deleteSelected(): void
+    {
+        if (! $this->selected) {
+            return;
+        }
+
+        RoomTypeModel::whereIn('id', $this->selected)->delete();
+
+        $this->dispatch('toast', type: 'deleted', message: 'Selected room types deleted.');
+
+        $this->resetSelection();
+        $this->resetPage();
     }
 
     public function render()
@@ -116,6 +153,26 @@ class RoomType extends Component
         $this->editingId = null;
         $this->form = $this->defaults();
         $this->resetValidation();
+    }
+
+    protected function resetSelection(): void
+    {
+        $this->selectPage = false;
+        $this->selected = [];
+    }
+
+    protected function removeFromSelection(int $id): void
+    {
+        $this->selected = array_values(array_filter($this->selected, fn ($selectedId) => (int) $selectedId !== $id));
+
+        if (! $this->selected) {
+            $this->selectPage = false;
+        }
+    }
+
+    protected function currentPageIds(): array
+    {
+        return $this->roomTypes->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 }
 

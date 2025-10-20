@@ -1,8 +1,10 @@
 <div
     x-data="{
-        modals: {},
-        open(id) { this.modals[id] = true },
-        close(id) { this.modals[id] = false },
+        modals: {
+            'wake-up-form': false,
+        },
+        open(id) { this.modals = { ...this.modals, [id]: true } },
+        close(id) { this.modals = { ...this.modals, [id]: false } },
         isOpen(id) { return !!this.modals[id] }
     }"
     x-on:modal-open.window="open($event.detail.id)"
@@ -33,21 +35,44 @@
                 class="w-full rounded border px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 md:w-80"
             >
 
-            <select
-                wire:model.live="status"
-                class="w-full md:w-48 rounded border px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
-            >
-                <option value="">All statuses</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-            </select>
+            <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                <select
+                    wire:model.live="status"
+                    class="w-full md:w-48 rounded border px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                >
+                    <option value="">All statuses</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+
+                @if ($selected)
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="text-gray-600">{{ count($selected) }} selected</span>
+                        <button
+                            type="button"
+                            class="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
+                            wire:click="deleteSelected"
+                            wire:loading.attr="disabled"
+                        >
+                            Delete Selected
+                        </button>
+                    </div>
+                @endif
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3">
+                            <input
+                                type="checkbox"
+                                wire:model="selectPage"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            >
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Guest</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Booking</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Scheduled For</th>
@@ -59,6 +84,14 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($wakeUps as $wakeUp)
                         <tr wire:key="wake-up-{{ $wakeUp->id }}">
+                            <td class="px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $wakeUp->id }}"
+                                    wire:model="selected"
+                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-700">
                                 <div class="font-semibold text-gray-900">{{ $wakeUp->customer?->name ?? 'Guest' }}</div>
                                 <div class="text-xs text-gray-500">{{ $wakeUp->customer?->phone ?? $wakeUp->customer?->email ?? '—' }}</div>

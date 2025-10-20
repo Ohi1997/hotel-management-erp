@@ -1,8 +1,11 @@
 <div
     x-data="{
-        modals: {},
-        open(id) { this.modals[id] = true },
-        close(id) { this.modals[id] = false },
+        modals: {
+            'customer-form': false,
+            'customer-details': false,
+        },
+        open(id) { this.modals = { ...this.modals, [id]: true } },
+        close(id) { this.modals = { ...this.modals, [id]: false } },
         isOpen(id) { return !!this.modals[id] }
     }"
     x-on:modal-open.window="open($event.detail.id)"
@@ -28,12 +31,33 @@
                 placeholder="Search customers…"
                 class="w-full md:w-80 border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
             >
+
+            @if ($selected)
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-gray-600">{{ count($selected) }} selected</span>
+                    <button
+                        type="button"
+                        class="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
+                        wire:click="deleteSelected"
+                        wire:loading.attr="disabled"
+                    >
+                        Delete Selected
+                    </button>
+                </div>
+            @endif
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3">
+                            <input
+                                type="checkbox"
+                                wire:model="selectPage"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            >
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
@@ -44,6 +68,14 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($customers as $customer)
                         <tr wire:key="customer-row-{{ $customer->id }}">
+                            <td class="px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $customer->id }}"
+                                    wire:model="selected"
+                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="font-medium text-gray-900">{{ $customer->name }}</div>
                                 <div class="text-sm text-gray-500">ID #{{ $customer->id }}</div>

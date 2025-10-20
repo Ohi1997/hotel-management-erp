@@ -1,8 +1,10 @@
 <div
     x-data="{
-        modals: {},
-        open(id) { this.modals[id] = true },
-        close(id) { this.modals[id] = false },
+        modals: {
+            'payment-form': false,
+        },
+        open(id) { this.modals = { ...this.modals, [id]: true } },
+        close(id) { this.modals = { ...this.modals, [id]: false } },
         isOpen(id) { return !!this.modals[id] }
     }"
     x-on:modal-open.window="open($event.detail.id)"
@@ -43,6 +45,20 @@
                     <option value="pending">Pending</option>
                     <option value="failed">Failed</option>
                 </select>
+
+                @if ($selected)
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="text-gray-600">{{ count($selected) }} selected</span>
+                        <button
+                            type="button"
+                            class="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
+                            wire:click="deleteSelected"
+                            wire:loading.attr="disabled"
+                        >
+                            Delete Selected
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -50,6 +66,13 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3">
+                            <input
+                                type="checkbox"
+                                wire:model="selectPage"
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            >
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Reference</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Customer</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Booking</th>
@@ -62,6 +85,14 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse ($payments as $payment)
                         <tr wire:key="payment-row-{{ $payment->id }}">
+                            <td class="px-4 py-3">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $payment->id }}"
+                                    wire:model="selected"
+                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                >
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-700">
                                 <div class="font-semibold text-gray-900">{{ $payment->reference ?? '—' }}</div>
                                 <div class="text-xs text-gray-500">{{ $payment->paid_at?->format('M d, Y H:i') }}</div>
