@@ -1,8 +1,11 @@
 <div
     x-data="{
-        modals: {},
-        open(id) { this.modals[id] = true },
-        close(id) { this.modals[id] = false },
+        modals: {
+            'customer-form': false,
+            'customer-details': false,
+        },
+        open(id) { this.modals = { ...this.modals, [id]: true } },
+        close(id) { this.modals = { ...this.modals, [id]: false } },
         isOpen(id) { return !!this.modals[id] }
     }"
     x-on:modal-open.window="open($event.detail.id)"
