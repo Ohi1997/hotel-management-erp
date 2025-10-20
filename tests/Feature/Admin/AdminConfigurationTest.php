@@ -5,6 +5,7 @@ use App\Models\HotelSetting;
 use App\Models\User;
 use Database\Seeders\RolesAndUsersSeeder;
 use Spatie\Permission\Models\Permission;
+use function Pest\Laravel\seed;
 
 it('seeds default hotels, users, and settings', function (): void {
     seed(RolesAndUsersSeeder::class);
