@@ -7,7 +7,7 @@ use Database\Seeders\RolesAndUsersSeeder;
 use Spatie\Permission\Models\Permission;
 
 it('seeds default hotels, users, and settings', function (): void {
-    $this->seed(RolesAndUsersSeeder::class);
+    seed(RolesAndUsersSeeder::class);
 
     $hotel = Hotel::where('code', 'HQ')->first();
 
